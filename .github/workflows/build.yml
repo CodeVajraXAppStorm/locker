@@ -15,7 +15,7 @@ jobs:
           distribution: temurin
           java-version: 17
       - run: npm install
-      - run: npx cap add android
+      - run: rm -f capacitor.config.ts capacitor.config.js && npx cap add android
       - name: Patch native project
         run: |
           D=android/app/src/main/java/com/vaultx/app
