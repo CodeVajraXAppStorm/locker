@@ -100,7 +100,6 @@ public class VaultPlugin extends Plugin {
     @PluginMethod
     public void wipe(PluginCall c) { doWipe(); c.resolve(); }
 
-    // ---------- Fingerprint ----------
     @PluginMethod
     public void bioAvailable(PluginCall c) {
         boolean ok = Build.VERSION.SDK_INT >= 23 &&
@@ -110,7 +109,6 @@ public class VaultPlugin extends Plugin {
         o.put("ok", ok);
         c.resolve(o);
     }
-
     private void prompt(PluginCall call, Cipher ci, Done d) {
         getActivity().runOnUiThread(() -> {
             BiometricPrompt bp = new BiometricPrompt((FragmentActivity) getActivity(),
@@ -184,7 +182,6 @@ public class VaultPlugin extends Plugin {
         } catch (Exception e) { c.reject(String.valueOf(e)); }
     }
 
-    // ---------- Backup folder (एक बार चुनो, याद रहेगा) ----------
     @PluginMethod
     public void folder(PluginCall c) {
         JSObject o = new JSObject();
@@ -196,6 +193,7 @@ public class VaultPlugin extends Plugin {
     public void pickFolder(PluginCall c) {
         Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
         i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+
                 | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
         startActivityForResult(c, i, "treePicked");
     }
@@ -221,7 +219,6 @@ public class VaultPlugin extends Plugin {
         if (s.isEmpty()) throw new Exception("no folder");
         return DocumentFile.fromTreeUri(getContext(), Uri.parse(s));
     }
-
     @PluginMethod
     public void write(PluginCall c) {
         try {
@@ -265,7 +262,6 @@ public class VaultPlugin extends Plugin {
         } catch (Exception e) { c.reject(String.valueOf(e)); }
     }
 
-    // ---------- PDF + Share ----------
     private void launch(File f, String mime, String mode) {
         Uri u = FileProvider.getUriForFile(getContext(), getContext().getPackageName() + ".fileprovider", f);
         Intent i;
@@ -346,8 +342,6 @@ public class VaultPlugin extends Plugin {
             c.resolve();
         } catch (Exception e) { c.reject(String.valueOf(e)); }
     }
-
-    // फाइल को या तो बैकअप फोल्डर में रखो (toFolder) या शेयर/व्यू खोलो
     private void deliver(PluginCall c, File f, String mime) throws Exception {
         if (Boolean.TRUE.equals(c.getBoolean("toFolder", false))) {
             DocumentFile t = tree();
@@ -421,7 +415,6 @@ public class VaultPlugin extends Plugin {
         } catch (Exception e) { c.reject(String.valueOf(e)); }
     }
 
-    // ---------- परमिशन ----------
     @PluginMethod
     public void askCamera(PluginCall c) {
         if (Build.VERSION.SDK_INT >= 23 && ContextCompat.checkSelfPermission(getContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED)
@@ -436,7 +429,6 @@ public class VaultPlugin extends Plugin {
         c.resolve();
     }
 
-    // ---------- एक्सपायरी रिमाइंडर ----------
     @PluginMethod
     public void setReminders(PluginCall c) {
         try {
@@ -448,8 +440,6 @@ public class VaultPlugin extends Plugin {
             c.resolve();
         } catch (Exception e) { c.reject(String.valueOf(e)); }
     }
-
-    // ---------- घुसपैठिया फोटो (सामने वाला कैमरा, चुपचाप) ----------
     private File intrDir() {
         File d = new File(getContext().getFilesDir(), "intr");
         d.mkdirs();
@@ -490,6 +480,12 @@ public class VaultPlugin extends Plugin {
         CaptureRequest.Builder b = d.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
         b.addTarget(ir.getSurface());
         b.set(CaptureRequest.JPEG_ORIENTATION, ori);
+        
+        // फ़िक्स: ऑटो-लाइट, फोकस और व्हाइट बैलेंस इनेबल किया गया ताकि धुंधलापन हटे
+        b.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+        b.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+        b.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_AUTO);
+        
         s.capture(b.build(), null, h);
     }
 
@@ -509,8 +505,19 @@ public class VaultPlugin extends Plugin {
                 if (so != null) ori = so;
                 StreamConfigurationMap map = cc.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
                 if (map == null) return;
-                for (Size z : map.getOutputSizes(ImageFormat.JPEG))
-                    if (best == null || Math.abs(z.getWidth() - 1024) < Math.abs(best.getWidth() - 1024)) best = z;
+                
+                // फ़िक्स: 1024 लिमिट हटाकर फ्रंट कैमरे का अधिकतम मेगापिक्सेल साइज लॉक किया गया
+                for (Size z : map.getOutputSizes(ImageFormat.JPEG)) {
+                    if (best == null) {
+                        best = z;
+                    } else {
+                        long areaNew = (long) z.getWidth() * z.getHeight();
+                        long areaBest = (long) best.getWidth() * best.getHeight();
+                        if (areaNew > areaBest) {
+                            best = z;
+                        }
+                    }
+                }
                 break;
             }
         }
@@ -529,11 +536,11 @@ public class VaultPlugin extends Plugin {
             try { ir.close(); } catch (Exception e) { }
             ht.quitSafely();
         };
-        // पहली 2 फ्रेम सिर्फ एक्सपोज़र सेट होने के लिए, तीसरी सेव होती है
+        
         ir.setOnImageAvailableListener(reader -> {
             Image im = reader.acquireLatestImage();
             if (im == null) return;
-            byte[] jpg = new byte[0];
+            byte[] jpg = null;
             try {
                 ByteBuffer bb = im.getPlanes()[0].getBuffer();
                 jpg = new byte[bb.remaining()];
@@ -541,12 +548,22 @@ public class VaultPlugin extends Plugin {
             } finally { im.close(); }
             shots[0]++;
             if (shots[0] >= 3) {
-                try { saveIntruder(jpg); } catch (Exception e) { }
+                if (jpg != null && jpg.length > 0) {
+                    try { saveIntruder(jpg); } catch (Exception e) { }
+                }
                 cleanup.run();
             } else {
-                try { shootOne(dev[0], ses[0], ir, sensorOri, h); } catch (Exception e) { cleanup.run(); }
+                // फ़िक्स: बिना प्रीव्यू लाइट एडजस्ट होने के लिए फ्रेम के बीच 250ms का डिले लागू
+                h.postDelayed(() -> {
+                    try {
+                        if (dev[0] != null && ses[0] != null) {
+                            shootOne(dev[0], ses[0], ir, sensorOri, h);
+                        } else { cleanup.run(); }
+                    } catch (Exception e) { cleanup.run(); }
+                }, 250);
             }
         }, h);
+        
         cm.openCamera(camId, new CameraDevice.StateCallback() {
             @Override public void onOpened(CameraDevice d) {
                 dev[0] = d;
