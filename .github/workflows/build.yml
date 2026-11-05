@@ -26,6 +26,12 @@ jobs:
           mkdir -p $D && cp native/*.java $D/
           sed -i 's#</manifest>#<uses-permission android:name="android.permission.CAMERA"/></manifest>#' android/app/src/main/AndroidManifest.xml
           sed -i '/^dependencies {/a\    implementation "androidx.biometric:biometric:1.1.0"\n    implementation "androidx.documentfile:documentfile:1.0.1"\n    implementation "com.tom-roush:pdfbox-android:2.0.27.0"' android/app/build.gradle
+      - name: App icon (only if assets/icon.png exists)
+        run: |
+          if [ -f assets/icon.png ]; then
+            npm install --no-save @capacitor/assets
+            npx capacitor-assets generate --android
+          fi
       - run: npx cap sync android
       - run: cd android && chmod +x gradlew && ./gradlew assembleDebug
       - uses: actions/upload-artifact@v4
