@@ -6,9 +6,14 @@
 <title>Vault X</title>
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
-<div id="app"></div>
+<body style="background:#0f1115;color:#eef0f4">
+<div id="app"><p style="padding:30px;font-family:sans-serif">Vault X लोड हो रहा है…</p></div>
 <div id="toast"></div>
-<script src="main.js"></script>
+<script>
+window.onerror=function(m,s,l){
+  document.getElementById("app").innerHTML='<pre style="padding:16px;white-space:pre-wrap;color:#ff8080;font-size:14px">JS error: '+m+'\n'+String(s||"").split("/").pop()+' line '+l+'</pre>';
+};
+</script>
+<script src="main.js" onerror="document.getElementById('app').innerHTML='<p style=&quot;padding:30px;color:#ff8080&quot;>main.js नहीं मिली (www फोल्डर में होनी चाहिए)</p>'"></script>
 </body>
 </html>
