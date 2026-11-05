@@ -1,14 +1,50 @@
 // ===== Vault X =====
-// सेक्शन यहाँ बदलो: [id, नाम, आइकन]
-const SECTIONS=[["identity","Identity (पहचान)","🪪"],["bank","Bank (बैंक)","🏦"],["education","Education (शिक्षा)","🎓"],["medical","Medical (मेडिकल)","🩺"],["other","Other Documents (अन्य)","📁"]];
+// सेक्शन यहाँ बदलो: [id, नाम, आइकन, छोटा विवरण, रंग(hue)]
+const SECTIONS=[
+["identity","Identity","id","आधार, PAN, लाइसेंस, वोटर ID",40],
+["bank","Bank","bank","पासबुक, चेक, कार्ड, स्टेटमेंट",175],
+["education","Education","cap","मार्कशीट, सर्टिफिकेट, डिग्री",265],
+["medical","Medical","heart","रिपोर्ट, पर्ची, बीमा",345],
+["other","Other Documents","folder","बाकी सारे डॉक्यूमेंट",215]];
+
+const IC={
+shield:'<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
+lock:'<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+fingerprint:'<path d="M12 11v3a6 6 0 0 1-1 3"/><path d="M8 11a4 4 0 0 1 8 0v2a10 10 0 0 1-2 6"/><path d="M5 12a7 7 0 0 1 14 0v1a14 14 0 0 1-1 5"/><path d="M8 17c0 1.5-.5 3-1 4"/>',
+sliders:'<path d="M4 6h8M18 6h2M4 12h2M12 12h8M4 18h10M20 18h0"/><circle cx="15" cy="6" r="2.2"/><circle cx="9" cy="12" r="2.2"/><circle cx="17" cy="18" r="2.2"/>',
+plus:'<path d="M12 5v14M5 12h14"/>',
+camera:'<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+image:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="M21 16l-5-5-8 8"/>',
+id:'<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M6 16c.5-2 5.5-2 6 0M14 10h4M14 14h4"/>',
+bank:'<path d="M3 10l9-6 9 6zM5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/>',
+cap:'<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/>',
+heart:'<path d="M12 21s-8-5-8-11a4.5 4.5 0 0 1 8-2.5A4.5 4.5 0 0 1 20 10c0 6-8 11-8 11z"/>',
+folder:'<path d="M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+back:'<path d="M15 5l-7 7 7 7"/>',
+chev:'<path d="M9 5l7 7-7 7"/>',
+file:'<path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5"/>',
+share:'<circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.2 10.8l7.6-3.6M8.2 13.2l7.6 3.6"/>',
+trash:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
+pencil:'<path d="M4 20h4L19 9l-4-4L4 16z"/>',
+refresh:'<path d="M20 11a8 8 0 0 0-14-4M4 5v4h4M4 13a8 8 0 0 0 14 4M20 19v-4h-4"/>',
+backspace:'<path d="M9 5h11v14H9l-6-7z"/><path d="M12 9l5 6M17 9l-5 6"/>',
+down:'<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>',
+key:'<circle cx="8" cy="14" r="4"/><path d="M11 11l9-9M16 6l3 3"/>',
+check:'<path d="M5 12l5 5 9-10"/>',
+printer:'<path d="M7 9V3h10v6M7 17H4v-7h16v7h-3"/><path d="M7 14h10v7H7z"/>',
+power:'<path d="M12 3v9"/><path d="M6.3 6.3a8 8 0 1 0 11.4 0"/>'
+};
+const ic=(n,s=22)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n]}</svg>`;
 
 const V=()=>Capacitor.Plugins.Vault;
 const app=document.getElementById("app");
 const esc=t=>String(t).replace(/[&<>"']/g,c=>"&#"+c.charCodeAt(0)+";");
 const te=new TextEncoder(),td=new TextDecoder();
 let key=null,busy=false,inExt=false,cur={};
+const view=h=>{app.innerHTML=`<div class="screen">${h}</div>`;window.scrollTo(0,0)};
+const $=id=>document.getElementById(id);
 
-function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("on");setTimeout(()=>t.classList.remove("on"),2500)}
+function toast(m){const t=$("toast");t.textContent=m;t.classList.add("on");setTimeout(()=>t.classList.remove("on"),2500)}
 // कैमरा/गैलरी/शेयर/फोल्डर जैसे बाहरी स्क्रीन खुलते समय ऐप लॉक न हो
 function hold(){busy=true;setTimeout(()=>{if(!inExt)busy=false},4000)}
 
@@ -29,7 +65,7 @@ const dbDel=id=>tx("readwrite",s=>s.delete(id));
 
 // ----- lock -----
 const bioOn=()=>localStorage.bio==="1";
-function lock(){key=null;try{V().wipe()}catch(e){}lockUI("")}
+function lock(){key=null;document.querySelectorAll(".ov").forEach(o=>o.remove());try{V().wipe()}catch(e){}lockUI("")}
 function onBg(){if(busy){inExt=true;return}lock()}
 function onFg(){inExt=false;busy=false;if(!key&&localStorage.chk&&bioOn())bioUnlock()}
 document.addEventListener("visibilitychange",()=>document.hidden?onBg():onFg());
@@ -44,7 +80,7 @@ async function tryPin(pin){
     if(td.decode(await dec(k,unb64(localStorage.chk)))==="VAULTX"){key=k;fails=0;return home()}
   }catch(e){}
   if(++fails>=5){until=Date.now()+30000;fails=0}
-  lockUI("गलत PIN ❌");
+  lockUI("गलत PIN, फिर से कोशिश करो");
 }
 async function bioUnlock(){
   try{const r=await V().bioUnlock();await tryPin(r.secret)}
@@ -63,20 +99,28 @@ async function createPin(pin){
   if(ok&&confirm("फिंगरप्रिंट से भी खोलना चालू करूँ?"))enableBio(pin);
 }
 function lockUI(msg){
-  const setup=!localStorage.chk,L=+localStorage.len;let pin="",first=null,note=setup?"नया PIN बनाओ (4–8 अंक)":(msg||"PIN डालो");
+  const setup=!localStorage.chk,L=+localStorage.len;let pin="",first=null,note=setup?"नया PIN बनाओ (4–8 अंक)":(msg||"अपना PIN डालो"),bad=!!msg;
   const draw=()=>{
     const n=setup?Math.max(4,pin.length):L;
-    app.innerHTML=`<div class="lock"><h1>🔐 Vault X</h1><p>${esc(note)}</p><div class="dots">${Array.from({length:n},(_,i)=>`<i class="${i<pin.length?"on":""}"></i>`).join("")}</div><div class="pad">${[1,2,3,4,5,6,7,8,9,"⌫",0,setup?"OK":(bioOn()?"👆":"")].map(k=>`<button data-k="${k}">${k}</button>`).join("")}</div></div>`;
-    app.querySelectorAll(".pad button").forEach(b=>b.onclick=()=>press(b.dataset.k));
+    const left=setup?`<button class="key ghost" data-k="⌫">${ic("backspace",26)}</button>`:(bioOn()?`<button class="key ghost" data-k="bio">${ic("fingerprint",32)}</button>`:`<button class="key ghost" data-k=""></button>`);
+    const right=setup?`<button class="key ghost" data-k="OK">${ic("check",30)}</button>`:`<button class="key ghost" data-k="⌫">${ic("backspace",26)}</button>`;
+    app.innerHTML=`<div class="lock"><div class="logo">${ic("shield",38)}</div><h1>VAULT <b>X</b></h1><p class="sub">सुरक्षित डॉक्यूमेंट लॉकर</p>
+    <div class="dots">${Array.from({length:n},(_,i)=>`<i class="${i<pin.length?"on":""}"></i>`).join("")}</div>
+    <p class="note ${bad?"err":""}">${esc(note)}</p>
+    <div class="pad">${[1,2,3,4,5,6,7,8,9].map(k=>`<button class="key" data-k="${k}">${k}</button>`).join("")}${left}<button class="key" data-k="0">0</button>${right}</div>
+    <div class="enc">${ic("lock",13)} AES-256 एन्क्रिप्टेड</div></div>`;
+    app.querySelectorAll(".key").forEach(b=>b.onclick=()=>press(b.dataset.k));
   };
   const press=k=>{
     if(!k)return;
+    if(navigator.vibrate)navigator.vibrate(8);
+    bad=false;
     if(k==="⌫")pin=pin.slice(0,-1);
-    else if(k==="👆")return bioUnlock();
+    else if(k==="bio")return bioUnlock();
     else if(k==="OK"){
-      if(pin.length<4){note="कम से कम 4 अंक";return draw()}
+      if(pin.length<4){note="कम से कम 4 अंक";bad=true;return draw()}
       if(first===null){first=pin;pin="";note="PIN फिर से डालो";return draw()}
-      if(first!==pin){first=null;pin="";note="मैच नहीं हुआ, फिर से बनाओ";return draw()}
+      if(first!==pin){first=null;pin="";note="मैच नहीं हुआ, फिर से बनाओ";bad=true;return draw()}
       return createPin(pin);
     }
     else if(pin.length<(setup?8:L))pin+=k;
@@ -87,18 +131,28 @@ function lockUI(msg){
 }
 
 // ----- screens -----
-function home(){
-  app.innerHTML=`<header><h2>Vault X</h2><button id="st">⚙️</button></header><div class="grid">${SECTIONS.map(s=>`<button class="card" data-s="${s[0]}"><span>${s[2]}</span>${s[1]}</button>`).join("")}</div>`;
-  app.querySelectorAll(".card").forEach(b=>b.onclick=()=>section(b.dataset.s));
-  document.getElementById("st").onclick=settings;
+async function home(){
+  const docs=await dbAll();const cnt=id=>docs.filter(d=>d.section===id).length;
+  view(`<div class="top"><div class="brand"><div class="mini">${ic("shield",22)}</div><div><h2>Vault X</h2><span>${docs.length} डॉक्यूमेंट सुरक्षित</span></div></div><button class="ibtn" id="st">${ic("sliders",21)}</button></div>
+  <div class="hero"><div class="hi">${ic("lock",18)}</div><div><b>आपका लॉकर सुरक्षित है</b><span>सारे डॉक्यूमेंट इस फ़ोन में एन्क्रिप्टेड हैं</span></div></div>
+  <div class="sec-title">श्रेणियाँ</div>
+  <div class="cats">${SECTIONS.map(s=>`<button class="cat" data-s="${s[0]}" style="--h:${s[4]}"><span class="tile">${ic(s[2],24)}</span><span class="ct"><b>${s[1]}</b><small>${s[3]}</small></span><span class="badge">${cnt(s[0])}</span>${ic("chev",18)}</button>`).join("")}</div>
+  <button class="fab" id="add">${ic("plus",24)} डॉक्यूमेंट जोड़ो</button>`);
+  app.querySelectorAll(".cat").forEach(b=>b.onclick=()=>section(b.dataset.s));
+  $("st").onclick=settings;
+  $("add").onclick=()=>addForm("identity",true);
 }
 async function section(id){
   const sec=SECTIONS.find(s=>s[0]===id);
   const docs=(await dbAll()).filter(d=>d.section===id).sort((a,b)=>b.ts-a.ts);
-  app.innerHTML=`<header><button id="bk">←</button><h2>${sec[2]} ${esc(sec[1])}</h2></header><div class="list">${docs.length?docs.map(d=>`<button class="row" data-id="${d.id}">📄 ${esc(d.title)}</button>`).join(""):'<div class="empty">अभी कोई डॉक्यूमेंट नहीं</div>'}</div><div class="body"><button class="btn" id="add">➕ डॉक्यूमेंट जोड़ो</button></div>`;
-  document.getElementById("bk").onclick=home;
-  document.getElementById("add").onclick=()=>addForm(id);
-  app.querySelectorAll(".row").forEach(b=>b.onclick=()=>detail(b.dataset.id));
+  const dt=t=>new Date(t).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"});
+  view(`<div class="top"><button class="ibtn" id="bk">${ic("back")}</button><h2 class="ttl">${sec[1]}</h2><span class="badge">${docs.length}</span></div>
+  ${docs.length?`<div class="docs">${docs.map(d=>`<button class="doc" data-id="${d.id}" style="--h:${sec[4]}"><span class="tile">${ic("file",22)}</span><span class="ct"><b>${esc(d.title)}</b><small>${dt(d.ts)}</small></span>${ic("chev",18)}</button>`).join("")}</div>`
+  :`<div class="empty"><div class="ring">${ic(sec[2],34)}</div>अभी कोई डॉक्यूमेंट नहीं<br>नीचे बटन दबाकर पहला जोड़ो</div>`}
+  <button class="fab" id="add">${ic("plus",24)} जोड़ो</button>`);
+  $("bk").onclick=home;
+  $("add").onclick=()=>addForm(id);
+  app.querySelectorAll(".doc").forEach(b=>b.onclick=()=>detail(b.dataset.id));
 }
 async function shrink(file){
   const bmp=await createImageBitmap(file);
@@ -113,46 +167,61 @@ function pick(side,cam){
   i.onchange=async()=>{
     const f=i.files[0];if(!f)return;
     cur[side]=await shrink(f);
-    const p=document.getElementById("p_"+side);p.src="data:image/jpeg;base64,"+cur[side];p.style.display="block";
+    $("p_"+side).src="data:image/jpeg;base64,"+cur[side];
+    $("u_"+side).classList.add("has");
   };
   i.click();
 }
-function addForm(sec){
-  cur={front:null,back:null};
-  const side=(k,t)=>`<div class="side"><h4>${t}</h4><img id="p_${k}" style="display:none;width:100%;border-radius:10px;margin-bottom:8px"><div class="two"><button data-k="${k}" data-c="1">📷 कैमरा</button><button data-k="${k}" data-c="0">🖼️ गैलरी</button></div></div>`;
-  app.innerHTML=`<header><button id="bk">←</button><h2>नया डॉक्यूमेंट</h2></header><div class="body"><input type="text" id="tt" placeholder="नाम (जैसे: आधार कार्ड)">${side("front","फ्रंट साइड")}${side("back","बैक साइड (ज़रूरी नहीं)")}<button class="btn" id="sv">💾 सेव करो</button></div>`;
-  document.getElementById("bk").onclick=()=>section(sec);
+function addForm(sec,fromHome){
+  cur={front:null,back:null,sec};
+  const up=(k,t,p)=>`<div class="up" id="u_${k}"><h4>${t}</h4><p>${p}</p><img id="p_${k}" alt=""><div class="two"><button class="cam" data-k="${k}" data-c="1">${ic("camera",19)} कैमरा</button><button class="gal" data-k="${k}" data-c="0">${ic("image",19)} गैलरी</button></div></div>`;
+  view(`<div class="top"><button class="ibtn" id="bk">${ic("back")}</button><h2 class="ttl">नया डॉक्यूमेंट</h2></div>
+  <input class="fld" id="tt" placeholder="डॉक्यूमेंट का नाम (जैसे: आधार कार्ड)" maxlength="60">
+  <div class="sec-title" style="margin-top:18px">श्रेणी</div>
+  <div class="chips">${SECTIONS.map(s=>`<button class="chip ${s[0]===sec?"on":""}" data-s="${s[0]}">${s[1]}</button>`).join("")}</div>
+  ${up("front","फ्रंट साइड","ज़रूरी")}${up("back","बैक साइड","ज़रूरी नहीं")}
+  <div class="bar"><button class="btn gold" id="sv">${ic("check",20)} सेव करो</button></div>`);
+  $("bk").onclick=()=>fromHome?home():section(sec);
+  app.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{cur.sec=b.dataset.s;app.querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",x===b))});
   app.querySelectorAll(".two button").forEach(b=>b.onclick=()=>pick(b.dataset.k,b.dataset.c==="1"));
-  document.getElementById("sv").onclick=async()=>{
-    const title=document.getElementById("tt").value.trim();
-    if(!title)return toast("नाम डालो");
+  $("sv").onclick=async()=>{
+    const title=$("tt").value.trim();
+    if(!title)return toast("डॉक्यूमेंट का नाम डालो");
     if(!cur.front)return toast("फ्रंट साइड की फोटो ज़रूरी है");
     const payload=JSON.stringify({front:cur.front,back:cur.back});
-    await dbPut({id:crypto.randomUUID(),section:sec,title,ts:Date.now(),enc:await enc(key,te.encode(payload))});
-    toast("सेव हो गया 🔒");section(sec);
+    await dbPut({id:crypto.randomUUID(),section:cur.sec,title,ts:Date.now(),enc:await enc(key,te.encode(payload))});
+    toast("सुरक्षित सेव हो गया");section(cur.sec);
   };
 }
 async function detail(id){
   const d=await dbGet(id);
   let p;try{p=JSON.parse(td.decode(await dec(key,d.enc)))}catch(e){return toast("खुल नहीं पाया")}
-  const img=(s,t)=>`<img alt="${t}" src="data:image/jpeg;base64,${s}">`;
-  app.innerHTML=`<header><button id="bk">←</button><h2>${esc(d.title)}</h2></header><div class="body">${img(p.front,"front")}${p.back?img(p.back,"back"):""}
-  ${p.back?`<label><input type="radio" name="lay" value="one" checked> एक पेज पर फ्रंट + बैक</label><label><input type="radio" name="lay" value="sep"> अलग-अलग पेज पर (फ्रंट एक पेज, बैक दूसरा)</label><label><input type="radio" name="lay" value="full"> पूरे पेज पर, आगे-पीछे (बड़े डॉक्यूमेंट के लिए)</label><p style="color:var(--mu);font-size:12px;margin:2px 0 8px">PDF हमेशा A4 साइज़ में बनेगा</p>`:""}
-  <label><input type="checkbox" id="pwc" ${localStorage.pw?"checked":""}> 🔐 PDF पर पासवर्ड लगाओ</label><button class="btn" id="pv">📄 PDF बनाओ / प्रिंट</button><button class="btn alt" id="ps">📤 PDF शेयर करो</button>
-  <button class="btn alt" id="sf">🖼️ फ्रंट शेयर करो</button>${p.back?'<button class="btn alt" id="sb">🖼️ बैक शेयर करो</button>':""}
-  <button class="btn alt" id="rn">✏️ नाम बदलो</button><button class="btn alt" id="rf">🔄 फ्रंट फोटो बदलो</button><button class="btn alt" id="rb">🔄 बैक फोटो ${p.back?"बदलो":"जोड़ो"}</button><button class="btn red" id="dl">🗑️ डिलीट</button></div>`;
-  document.getElementById("bk").onclick=()=>section(d.section);
-  const pdf=async mode=>{let pw;if(document.getElementById("pwc").checked){pw=await getPw();if(!pw)return}hold();const lay=(document.querySelector("input[name=lay]:checked")||{}).value||"one";
-    V().pdf({images:p.back?[p.front,p.back]:[p.front],layout:lay,name:d.title,mode,password:pw}).catch(()=>toast("PDF नहीं खुला"))};
-  document.getElementById("pv").onclick=()=>pdf("view");
-  document.getElementById("ps").onclick=()=>pdf("send");
-  const shr=(data,n)=>{hold();V().share({data,name:n,mime:"image/jpeg"}).catch(()=>toast("शेयर नहीं हुआ"))};
-  document.getElementById("sf").onclick=()=>shr(p.front,d.title+"_front");
-  if(p.back)document.getElementById("sb").onclick=()=>shr(p.back,d.title+"_back");
-  document.getElementById("rn").onclick=async()=>{const t=prompt("नया नाम",d.title);if(t&&t.trim()){d.title=t.trim();await dbPut(d);detail(id)}};
-  document.getElementById("rf").onclick=()=>replacePhoto(id,"front");
-  document.getElementById("rb").onclick=()=>replacePhoto(id,"back");
-  document.getElementById("dl").onclick=async()=>{if(confirm("पक्का डिलीट करना है?")){await dbDel(id);section(d.section)}};
+  let lay="one";
+  const pic=(k,t)=>`<div class="pic"><img src="data:image/jpeg;base64,${p[k]}" alt="${t}"><span class="lbl">${t}</span><div class="pa"><button data-a="s${k}">${ic("share",17)}</button><button data-a="r${k}">${ic("refresh",17)}</button></div></div>`;
+  view(`<div class="top"><button class="ibtn" id="bk">${ic("back")}</button><h2 class="ttl">${esc(d.title)}</h2><button class="ibtn" id="rn">${ic("pencil",19)}</button><button class="ibtn danger" id="dl">${ic("trash",19)}</button></div>
+  <div class="pics">${pic("front","फ्रंट")}${p.back?pic("back","बैक"):`<button class="pic empty" id="ab">${ic("plus",26)}बैक साइड जोड़ो</button>`}</div>
+  <div class="sec-title">PDF सेटिंग · A4</div>
+  ${p.back?`<div class="seg"><button data-l="one" class="on">एक पेज पर</button><button data-l="sep">अलग पेज</button><button data-l="full">पूरा पेज</button></div>`:""}
+  <label class="sw"><span>${ic("key",18)} PDF पर पासवर्ड लगाओ</span><input type="checkbox" id="pwc" ${localStorage.pw?"checked":""}><i></i></label>
+  <div class="bar"><button class="btn ghost" id="ps">${ic("share",19)} PDF शेयर</button><button class="btn gold" id="pv">${ic("printer",19)} PDF देखो / प्रिंट</button></div>`);
+  $("bk").onclick=()=>section(d.section);
+  app.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{lay=b.dataset.l;app.querySelectorAll(".seg button").forEach(x=>x.classList.toggle("on",x===b))});
+  app.querySelectorAll(".pic img").forEach(im=>im.onclick=()=>{const o=document.createElement("div");o.className="ov";o.innerHTML=`<img src="${im.src}" alt="">`;o.onclick=()=>o.remove();document.body.appendChild(o)});
+  app.querySelectorAll(".pa button").forEach(b=>b.onclick=e=>{
+    e.stopPropagation();const a=b.dataset.a,k=a.slice(1);
+    if(a[0]==="s"){hold();V().share({data:p[k],name:d.title+"_"+k,mime:"image/jpeg"}).catch(()=>toast("शेयर नहीं हुआ"))}
+    else replacePhoto(id,k);
+  });
+  if($("ab"))$("ab").onclick=()=>replacePhoto(id,"back");
+  const pdf=async mode=>{
+    let pw;if($("pwc").checked){pw=await getPw();if(!pw)return}
+    hold();
+    V().pdf({images:p.back?[p.front,p.back]:[p.front],layout:p.back?lay:"one",name:d.title,mode,password:pw}).catch(()=>toast("PDF नहीं खुला"));
+  };
+  $("pv").onclick=()=>pdf("view");
+  $("ps").onclick=()=>pdf("send");
+  $("rn").onclick=async()=>{const t=prompt("नया नाम",d.title);if(t&&t.trim()){d.title=t.trim();await dbPut(d);detail(id)}};
+  $("dl").onclick=async()=>{if(confirm("पक्का डिलीट करना है?")){await dbDel(id);section(d.section)}};
 }
 
 // ----- PDF password, photo replace, PIN change -----
@@ -160,7 +229,7 @@ async function setPw(){
   const p=prompt("PDF / बैकअप का पासवर्ड सेट करो (कम से कम 4 अक्षर)");
   if(!p||p.length<4){toast("पासवर्ड सेट नहीं हुआ");return null}
   localStorage.pw=b64(await enc(key,te.encode(p)));
-  toast("पासवर्ड सेट हो गया ✅");return p;
+  toast("पासवर्ड सेट हो गया");return p;
 }
 async function getPw(){
   if(localStorage.pw)return td.decode(await dec(key,unb64(localStorage.pw)));
@@ -175,7 +244,7 @@ function replacePhoto(id,side){
     const d=await dbGet(id);const p=JSON.parse(td.decode(await dec(key,d.enc)));
     p[side]=await shrink(f);
     d.enc=await enc(key,te.encode(JSON.stringify(p)));await dbPut(d);
-    toast("फोटो बदल गई ✅");detail(id);
+    toast("फोटो बदल गई");detail(id);
   };
   i.click();
 }
@@ -191,7 +260,7 @@ async function changePin(){
   localStorage.salt=b64(salt);localStorage.chk=b64(await enc(nk,te.encode("VAULTX")));localStorage.len=n1.length;
   key=nk;
   if(bioOn())enableBio(n1);
-  toast("PIN बदल गया ✅");
+  toast("PIN बदल गया");
 }
 
 // ----- settings / backup / restore -----
@@ -208,7 +277,7 @@ async function backup(){
       const pl=JSON.parse(td.decode(await dec(key,d.enc)));
       await V().pdf({images:pl.back?[pl.front,pl.back]:[pl.front],layout:"one",name:d.title+"_"+d.id.slice(0,4),password:pw,toFolder:true});
     }
-    toast(docs.length+" डॉक्यूमेंट का बैकअप हो गया ✅");
+    toast(docs.length+" डॉक्यूमेंट का बैकअप हो गया");
   }catch(e){toast("बैकअप नहीं हुआ")}
 }
 async function restore(){
@@ -226,31 +295,34 @@ async function restore(){
       const inner=await dec(ok,unb64(r.enc));
       r.enc=await enc(key,inner);await dbPut(r);n++;
     }
-    toast(n+" डॉक्यूमेंट रिस्टोर हुए ✅");
+    toast(n+" डॉक्यूमेंट रिस्टोर हुए");
   }catch(e){toast("रिस्टोर नहीं हुआ")}
 }
 function settings(){
-  app.innerHTML=`<header><button id="bk">←</button><h2>सेटिंग्स</h2></header><div class="body">
-  <button class="btn" id="b1">💾 बैकअप अभी लो</button>
-  <button class="btn alt" id="b2">♻️ बैकअप से रिस्टोर करो</button>
-  <button class="btn alt" id="b3">📁 बैकअप फोल्डर बदलो</button>
-  <button class="btn alt" id="b4">👆 फिंगरप्रिंट चालू करो</button>
-  <button class="btn alt" id="b6">🔑 PDF / बैकअप पासवर्ड ${localStorage.pw?"बदलो":"सेट करो"}</button>
-  <button class="btn alt" id="b7">🔢 PIN बदलो</button>
-  <button class="btn alt" id="b5">🔒 अभी लॉक करो</button></div>`;
-  document.getElementById("b6").onclick=async()=>{if(await setPw())settings()};
-  document.getElementById("b7").onclick=changePin;
-  document.getElementById("bk").onclick=home;
-  document.getElementById("b1").onclick=backup;
-  document.getElementById("b2").onclick=restore;
-  document.getElementById("b3").onclick=async()=>{hold();try{await V().pickFolder();toast("फोल्डर सेट हो गया")}catch(e){}};
-  document.getElementById("b4").onclick=async()=>{
+  const row=(id,icn,t,s,h,cls="")=>`<button class="set ${cls}" id="${id}" style="--h:${h}"><span class="tile sm">${ic(icn,20)}</span><span class="ct"><b>${t}</b><small>${s}</small></span>${ic("chev",18)}</button>`;
+  view(`<div class="top"><button class="ibtn" id="bk">${ic("back")}</button><h2 class="ttl">सेटिंग्स</h2></div>
+  <div class="sec-title">सुरक्षा</div>
+  <div class="sets">${row("b4","fingerprint","फिंगरप्रिंट",bioOn()?"चालू है · दोबारा सेट करो":"उँगली से लॉक खोलो",40)}
+  ${row("b7","lock","PIN बदलो","नया PIN बनाओ",215)}
+  ${row("b6","key","PDF / बैकअप पासवर्ड",localStorage.pw?"पासवर्ड बदलो":"पासवर्ड सेट करो",265)}</div>
+  <div class="sec-title" style="margin-top:22px">बैकअप</div>
+  <div class="sets">${row("b1","down","बैकअप अभी लो","encrypted फाइलें + पासवर्ड वाली PDF",175)}
+  ${row("b2","refresh","बैकअप से रिस्टोर करो","पुराना बैकअप वापस लाओ",345)}
+  ${row("b3","folder","बैकअप फोल्डर बदलो","दूसरा फोल्डर चुनो",215)}</div>
+  <div class="sets" style="margin-top:22px">${row("b5","power","अभी लॉक करो","ऐप तुरंत लॉक हो जाएगा",0,"danger")}</div>`);
+  $("bk").onclick=home;
+  $("b1").onclick=backup;
+  $("b2").onclick=restore;
+  $("b3").onclick=async()=>{hold();try{await V().pickFolder();toast("फोल्डर सेट हो गया")}catch(e){}};
+  $("b4").onclick=async()=>{
     const ok=await V().bioAvailable().then(r=>r.ok).catch(()=>false);
     if(!ok)return toast("इस फ़ोन में फिंगरप्रिंट उपलब्ध नहीं");
     const pin=prompt("अपना PIN डालो");if(!pin)return;
-    try{const k=await derive(pin,unb64(localStorage.salt));await dec(k,unb64(localStorage.chk));enableBio(pin)}catch(e){toast("PIN गलत है")}
+    try{const k=await derive(pin,unb64(localStorage.salt));await dec(k,unb64(localStorage.chk));await enableBio(pin);settings()}catch(e){toast("PIN गलत है")}
   };
-  document.getElementById("b5").onclick=lock;
+  $("b6").onclick=async()=>{if(await setPw())settings()};
+  $("b7").onclick=changePin;
+  $("b5").onclick=lock;
 }
 
 // शुरू में हमेशा लॉक
