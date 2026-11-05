@@ -481,10 +481,12 @@ public class VaultPlugin extends Plugin {
         b.addTarget(ir.getSurface());
         b.set(CaptureRequest.JPEG_ORIENTATION, ori);
         
-        // फ़िक्स: ऑटो-लाइट, फोकस और व्हाइट बैलेंस इनेबल किया गया ताकि धुंधलापन हटे
+        // अधिकतम ब्राइटनेस और बेस्ट क्वालिटी मोड इनेबल करना
         b.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
         b.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
         b.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_AUTO);
+        b.set(CaptureRequest.EDGE_MODE, CaptureRequest.EDGE_MODE_HIGH_QUALITY);
+        b.set(CaptureRequest.NOISE_REDUCTION_MODE, CaptureRequest.NOISE_REDUCTION_MODE_HIGH_QUALITY);
         
         s.capture(b.build(), null, h);
     }
@@ -506,7 +508,7 @@ public class VaultPlugin extends Plugin {
                 StreamConfigurationMap map = cc.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
                 if (map == null) return;
                 
-                // फ़िक्स: 1024 लिमिट हटाकर फ्रंट कैमरे का अधिकतम मेगापिक्सेल साइज लॉक किया गया
+                // फ्रंट कैमरे का अधिकतम पिक्सल साइज लॉक करना
                 for (Size z : map.getOutputSizes(ImageFormat.JPEG)) {
                     if (best == null) {
                         best = z;
@@ -546,21 +548,15 @@ public class VaultPlugin extends Plugin {
                 jpg = new byte[bb.remaining()];
                 bb.get(jpg);
             } finally { im.close(); }
+            
             shots[0]++;
-            if (shots[0] >= 3) {
+            // पहली 4 फ्रेम्स बैकग्राउंड में रोशनी एडजस्ट करने के लिए स्किप होंगी
+            // 5वीं फ्रेम पूरी तरह से साफ, ब्राइट और असली सेल्फी जैसी आएगी
+            if (shots[0] >= 5) {
                 if (jpg != null && jpg.length > 0) {
                     try { saveIntruder(jpg); } catch (Exception e) { }
                 }
                 cleanup.run();
-            } else {
-                // फ़िक्स: बिना प्रीव्यू लाइट एडजस्ट होने के लिए फ्रेम के बीच 250ms का डिले लागू
-                h.postDelayed(() -> {
-                    try {
-                        if (dev[0] != null && ses[0] != null) {
-                            shootOne(dev[0], ses[0], ir, sensorOri, h);
-                        } else { cleanup.run(); }
-                    } catch (Exception e) { cleanup.run(); }
-                }, 250);
             }
         }, h);
         
@@ -571,7 +567,24 @@ public class VaultPlugin extends Plugin {
                     d.createCaptureSession(Arrays.asList(ir.getSurface()), new CameraCaptureSession.StateCallback() {
                         @Override public void onConfigured(CameraCaptureSession s) {
                             ses[0] = s;
-                            try { shootOne(d, s, ir, sensorOri, h); } catch (Exception e) { cleanup.run(); }
+                            try {
+                                // एंटी-डार्क फिक्स: पहले बैकग्राउंड प्रीव्यू (Repeating Request) चलाएं ताकि सेंसर रोशनी को सोख सके
+                                CaptureRequest.Builder pb = d.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+                                pb.addTarget(ir.getSurface());
+                                pb.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+                                pb.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+                                s.setRepeatingRequest(pb.build(), null, h);
+                                
+                                // कैमरे को फोकस और पूरी ब्राइटनेस सेट करने के लिए 600ms का समय देना, फिर फोटो कैप्चर करना
+                                h.postDelayed(() -> {
+                                    try {
+                                        if (dev[0] != null && ses[0] != null) {
+                                            shootOne(dev[0], ses[0], ir, sensorOri, h);
+                                        } else { cleanup.run(); }
+                                    } catch (Exception e) { cleanup.run(); }
+                                }, 600);
+                                
+                            } catch (Exception e) { cleanup.run(); }
                         }
                         @Override public void onConfigureFailed(CameraCaptureSession s) { cleanup.run(); }
                     }, h);
