@@ -24,8 +24,9 @@ jobs:
         run: |
           D=android/app/src/main/java/com/vaultx/app
           mkdir -p $D && cp native/*.java $D/
-          sed -i 's#</manifest>#<uses-permission android:name="android.permission.CAMERA"/></manifest>#' android/app/src/main/AndroidManifest.xml
-          sed -i '/^dependencies {/a\    implementation "androidx.biometric:biometric:1.1.0"\n    implementation "androidx.documentfile:documentfile:1.0.1"\n    implementation "com.tom-roush:pdfbox-android:2.0.27.0"' android/app/build.gradle
+          sed -i 's#</manifest>#<uses-permission android:name="android.permission.CAMERA"/><uses-permission android:name="android.permission.POST_NOTIFICATIONS"/><uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/></manifest>#' android/app/src/main/AndroidManifest.xml
+          sed -i 's#</application>#<receiver android:name=".ExpiryReceiver" android:exported="true"><intent-filter><action android:name="android.intent.action.BOOT_COMPLETED"/></intent-filter></receiver></application>#' android/app/src/main/AndroidManifest.xml
+          sed -i '/^dependencies {/a\    implementation "androidx.biometric:biometric:1.1.0"\n    implementation "androidx.documentfile:documentfile:1.0.1"\n    implementation "com.tom-roush:pdfbox-android:2.0.27.0"\n    implementation "net.lingala.zip4j:zip4j:2.11.5"' android/app/build.gradle
       - name: App icon (only if assets/icon.png exists)
         run: |
           if [ -f assets/icon.png ]; then
